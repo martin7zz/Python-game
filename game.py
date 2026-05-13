@@ -2,8 +2,10 @@ import pygame, sys, json, os
 from pygame.locals import*
 from menu.menu import Menu
 from world import World
-from utils import load_image, load_images, load_tileset_images, Animation
+from AssetManager import AssetManager
 from tile import *
+from audioManager import AudioManager
+
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 
@@ -11,6 +13,7 @@ class Game():
     def __init__(self):
         # Initialize pygame
         pygame.init()
+        pygame.mixer.init()
         
         pygame.display.set_caption('Game')
         DISPLAY_W, DISPLAY_H = 1920, 1080
@@ -25,12 +28,12 @@ class Game():
         self.FPS = 120
         self.fpsClock = pygame.time.Clock()
         
-        self.assets = {
-            'player': load_image('characterSprite.png'),
-            'player/idle': Animation(load_tileset_images('Player/Animation.png', self.level_data), img_dur=1),
-            'npc/idle': load_image('characterSprite.png')
-        }
-
+        self.assets = AssetManager()
+        self.assets.load_all()
+        
+        self.audio_manager = AudioManager()
+        self.audio_manager.sfx_manager.load_all()
+        
         # level init
         self.level = World(self, self.screen, self.display, self.level_data)
         
