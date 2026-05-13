@@ -97,7 +97,7 @@ class Menu():
     
     def run(self, screen):
         if self.game_paused:
-            screen.fill((0, 0, 0))  # Clear the screen at the start
+            screen.fill((0, 0, 0))
 
             # if self.menu_change_cooldown > 0:
             #     self.menu_change_cooldown -= 1
@@ -107,10 +107,8 @@ class Menu():
                 self.handle_scroll_input()
                 self.draw_levels_menu(screen)
             else:
-                # Get the current menu's buttons dynamically
                 current_menu_buttons = self.menus.get(self.menu_state, {})
 
-                # Iterate over the buttons in the current menu
                 for button_name, button in current_menu_buttons.items():
                     if button.draw(screen):
                         self.handle_button_click(button_name)
@@ -152,8 +150,8 @@ class Menu():
         self.display_height = height
         self.screen = screen
         
-        button_width = 100  # Example button width
-        button_height = 50  # Example button height
+        button_width = 100 
+        button_height = 50 
 
         # Recalculate positions for each menu
         for menu_name, buttons in self.menus.items():
@@ -188,31 +186,15 @@ class Menu():
                     }
                     y = base_y + offsets.get(button_name, 0)
                 elif menu_name == "levels":
-                    # Special case for scrolling menu
+                    # scrolling menu
                     base_y = (self.display_height - button_height) // 2 - 100
-                    y = base_y  # Default base Y for level buttons
-                    # Add logic here if levels require unique positions
+                    y = base_y 
+                    # unique positions for levels
 
-                # Calculate x position
                 x = (self.display_width - button_width) // 2 + 30
 
-                # Update the button position
                 button.rect.topleft = (x, y)
                 
-    def get_clicked_level(self, levelID):
-        chosen_level = self.level.get_level_by_id(levelID)
-        
-        self.level.current_level = chosen_level
-        
-        print(f"Current level after change: {self.level.current_level['identifier']}")
-        print(f"Current level after change: {chosen_level['identifier']}")
-        self.level.player_data = None
-        
-        self.level.player = pygame.sprite.GroupSingle()
-        
-        self.level.load_level(chosen_level, self.display)
-        
-
     def handle_button_click(self, button_name):
         if self.menu_state == "main":
             if button_name == "resume":
@@ -249,29 +231,29 @@ class Menu():
         
         elif self.menu_state == "levels":
             if button_name == "level1":
-                self.get_clicked_level("Level_1")
+                self.level.get_level_from_menu("Level_1")
             elif button_name == "level2":
-                self.get_clicked_level("Level_2")
+                self.level.get_level_from_menu("Level_2")
             elif button_name == "level3":
-                self.get_clicked_level("Level_3")
+                self.level.get_level_from_menu("Level_3")
             elif button_name == "level4":
-                self.get_clicked_level("Level_4")
+                self.level.get_level_from_menu("Level_4")
             elif button_name == "level5":
-                self.get_clicked_level("Level_5")
+                self.level.get_level_from_menu("Level_5")
             elif button_name == "level6":
-                self.get_clicked_level("Level_6")
+                self.level.get_level_from_menu("Level_6")
             elif button_name == "level7":
-                self.get_clicked_level("Level_7")
+                self.level.get_level_from_menu("Level_7")
             elif button_name == "level8":
-                self.get_clicked_level("Level_8")
+                self.level.get_level_from_menu("Level_8")
             elif button_name == "level9":
-                self.get_clicked_level("Level_9")
+                self.level.get_level_from_menu("Level_9")
             elif button_name == "level10":
-                self.get_clicked_level("Level_10")
+                self.level.get_level_from_menu("Level_10")
             elif button_name == "level11":
-                self.get_clicked_level("Level_11")
+                self.level.get_level_from_menu("Level_11")
             elif button_name == "level12":
-                self.get_clicked_level("Level_0")
+                self.level.get_level_from_menu("Level_0")
             
                 
         
