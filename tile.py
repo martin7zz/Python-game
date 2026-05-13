@@ -16,4 +16,9 @@ class Tile(pygame.sprite.Sprite):
         self.x, self.y = self.rect.x, self.rect.y
         
     def draw(self, display, camera):
-        display.blit(self.image, (self.pos[0] + camera[0], self.pos[1] + camera[1]))
+        display.blit(
+            self.image,
+            ((self.pos[0] + camera[0]), (self.pos[1] + camera[1]))
+        )
+        
+        # print((self.pos[0] + camera[0]), (self.pos[1] + camera[1]))

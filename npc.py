@@ -2,10 +2,10 @@ import pygame
 from physicsEntity import PhysicsEntity
 
 class NPC(PhysicsEntity, pygame.sprite.Sprite):
-    def __init__(self, game, local_pos, world_pos, size):
+    def __init__(self, game, local_pos, world_pos, size, id):
         super().__init__(game, 'npc', world_pos, size, local_pos)
         pygame.sprite.Sprite.__init__(self)
-    
+        self.id = id
     # def update(self, tilemap):
     #     super().update(tilemap)
         
