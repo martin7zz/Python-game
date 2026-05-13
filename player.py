@@ -2,19 +2,25 @@ import pygame
 from physicsEntity import PhysicsEntity
 
 class Player(PhysicsEntity, pygame.sprite.Sprite):
-    def __init__(self, game, local_pos, world_pos, size, is_Spawned):
+    def __init__(self, game, local_pos, world_pos, size, is_Spawned, id):
         super().__init__(game, 'player', world_pos, size, local_pos)
         pygame.sprite.Sprite.__init__(self)
+        self.iid = id
         
-        self.speed_increment = 2
+        self.speed_increment = 3.7
         self.air_time = 0
         self.doubleJump = True
         self.jumping = False
         self.current_jumps = 0
-        self.max_jumps = 2
+        self.max_jumps = 3
         self.jump_speed = 5.5
         self.dashing = 0
         self.grounded_timer = 0
+        
+        self.attack_key_held = False
+        self.attacking = False
+        self.attack_timer = 0
+        self.attack_duration = 50
         
         self.movement = [False, False]
         
@@ -43,16 +49,22 @@ class Player(PhysicsEntity, pygame.sprite.Sprite):
             self.velocity.y = -self.jump_speed
             self.air_time = 5.5
             self.jumping = True
-            print(self.current_jumps)
+            # print(self.current_jumps)
         elif self.doubleJump and self.current_jumps < self.max_jumps:  # Player is airborne
             self.current_jumps += 1
             self.velocity.y = -self.jump_speed
             self.air_time = 5.5
             self.jumping = True
-            print(self.current_jumps)
+            # print(self.current_jumps)
             
-        
+    def attack(self):
+        if not self.attacking:
+            self.attacking = True
+            self.attack_timer = self.attack_duration
+            self.set_action('attack')
+            self.velocity.x *= 50
             
+
             
     
     def handle_input(self):
@@ -80,10 +92,36 @@ class Player(PhysicsEntity, pygame.sprite.Sprite):
         elif not keys[pygame.K_SPACE] and not keys[pygame.K_UP]:
             self.jumping = False
         
-        if keys[pygame.K_LSHIFT]:
+        if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
             self.dash()
+        
+        if keys[pygame.K_z]:
+            if not self.attack_key_held:
+                self.attack()
+            self.attack_key_held = True
+        else:
+            self.attack_key_held = False
     
     def update(self, tilemap, movement=(0, 0)):
+        self.handle_input()
+        
+        if self.dashing > 0:
+            self.dashing = max(0, self.dashing - 1)
+        if self.dashing < 0:
+            self.dashing = min(0, self.dashing + 1)
+        if abs(self.dashing) > 50:
+            self.velocity.x = abs(self.dashing) / self.dashing * 8
+            if abs(self.dashing) == 51:
+                self.velocity.x *= 0.1
+                
+        if abs(self.dashing) <= 50:
+            if self.velocity.x > 0:
+                self.velocity.x = max(self.velocity.x - 0.1, 0)
+            else:
+                self.velocity.x = min(self.velocity.x + 0.1, 0)
+        
+        # print(self.velocity.x)
+            
         super().update(tilemap, movement=movement)
         
         self.air_time += 1
@@ -98,28 +136,22 @@ class Player(PhysicsEntity, pygame.sprite.Sprite):
             self.air_time = 0
             self.current_jumps = 0
             self.doubleJump = True
-            
-            
-        self.handle_input()
         
-        self.set_action('idle')
-        
-        if self.dashing > 0:
-            self.dashing = max(0, self.dashing - 1)
-        if self.dashing < 0:
-            self.dashing = min(0, self.dashing + 1)
-        if abs(self.dashing) > 50:
-            self.velocity.x = abs(self.dashing) / self.dashing * 8
-            if abs(self.dashing) == 51:
-                self.velocity.x *= 0.1
-                
-        if self.velocity.x > 0:
-            self.velocity.x = max(self.velocity.x - 0.1, 0)
+        if self.attacking:
+            pass
+        elif self.movement[0] or self.movement[1]:
+            self.set_action('run')
         else:
-            self.velocity.x = min(self.velocity.x + 0.1, 0)
+            self.set_action('idle')
+        
+        if self.attacking:
+            self.attack_timer -= 1
+
+            if self.attack_timer <= 0:
+                self.attacking = False
+        
     
     def render(self, surf, camera):
-        if abs(self.dashing) <= 50:
-            super().render(surf, camera)
+        super().render(surf, camera)
     
     
