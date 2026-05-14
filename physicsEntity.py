@@ -1,11 +1,10 @@
 import pygame
 from spriteUtils import Animation
 class PhysicsEntity():
-    def __init__(self, game, e_type, pos, size, local_pos):
+    def __init__(self, game, e_type, pos, size):
         self.game = game
         self.type = e_type
         self.pos = list(pos)
-        self.local_pos = list(local_pos)
         self.size = size
         self.velocity = pygame.Vector2(0, 0)
         self.collisions = {'up': False, 'down': False, 'right': False, 'left': False}
@@ -59,9 +58,9 @@ class PhysicsEntity():
                     # print(f"collision up: {self.collisions['up']}")
                 self.pos[1] = entity_rect.y
         
-        if movement[0] > 0:
+        if self.velocity.x > 0:
             self.flip = False
-        if movement[0] < 0:
+        elif self.velocity.x < 0:
             self.flip = True
         
         self.last_movement = movement
@@ -76,33 +75,33 @@ class PhysicsEntity():
         # temporary
         if isinstance(self.animation, Animation):
             self.animation.update()
-        
+    
+    def get_facing(self):
+        return self.flip
+    
     def render(self, surf, camera):
-        # frame = self.animation.img()
-
-        # crop_rect = frame.get_bounding_rect()
-        # cropped = frame.subsurface(crop_rect)
-
-        # scaled = pygame.transform.scale(cropped, self.size)
-
-        # flipped = pygame.transform.flip(scaled, self.flip, False)
-
-        # draw_x = (self.pos[0] + camera[0])
-        # draw_y = (self.pos[1] + camera[1])
-
-        # surf.blit(flipped, (draw_x, draw_y))
-        
-        # debug_rect = pygame.Rect(draw_x, draw_y, *self.size)
-        # pygame.draw.rect(surf, (255, 0, 0), debug_rect, 1)
-        
         frame = self.animation.img()
+        
+        if self.type == 'player':
+            scale = 2
+            frame = pygame.transform.scale(
+                frame,
+                (
+                    frame.get_width() * scale,
+                    frame.get_height() * scale
+                )
+            )
+        
+        flipped = pygame.transform.flip(frame, self.get_facing(), False)
 
-        flipped = pygame.transform.flip(frame, self.flip, False)
+        draw_x = self.pos[0] + camera[0]
+        draw_y = self.pos[1] + camera[1]
 
-        draw_x = (self.pos[0] + camera[0])
-        draw_y = (self.pos[1] + camera[1])
+        hitbox = pygame.Rect(draw_x, draw_y, *self.size)
 
-        surf.blit(flipped, (draw_x, draw_y))
+        sprite_rect = flipped.get_rect(midbottom=hitbox.midbottom)
+
+        surf.blit(flipped, sprite_rect)
         
         debug_rect = pygame.Rect(draw_x, draw_y, *self.size)
         pygame.draw.rect(surf, (255, 0, 0), debug_rect, 1)

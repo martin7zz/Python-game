@@ -19,10 +19,10 @@ class AssetManager:
             ).load_grid_images(
                 num_rows=1,
                 num_cols=10,
-                x_margin=33,
-                x_padding=67,
-                y_margin=16,
-                y_padding=25
+                x_margin=0,
+                x_padding=0,
+                y_margin=15,
+                y_padding=15
             ),
             fps=10,
             loop=True
@@ -33,17 +33,25 @@ class AssetManager:
             ).load_grid_images(
                 num_rows=1,
                 num_cols=16,
-                x_margin=33,
-                x_padding=57,
-                y_margin=16,
-                y_padding=25
+                x_margin=0,
+                x_padding=0,
+                y_margin=15,
+                y_padding=15
             ),
             fps=16,
             loop=True
         )
         self.assets['player/attack'] = Animation(
-            SpriteSheet(BASE_IMG_PATH + 'Player/Sprites/ATTACK 1.png').slice(1, 7),
-            fps=30, loop=False
+            SpriteSheet(BASE_IMG_PATH + 'Player/Sprites/ATTACK 1.png').load_grid_images(
+                num_rows=1,
+                num_cols=7,
+                x_margin=0,
+                x_padding=0,
+                y_margin=15,
+                y_padding=15
+            ),
+            fps=30,
+            loop=False
         )
 
     def load_enemy_assets(self):

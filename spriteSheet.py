@@ -47,6 +47,8 @@ class SpriteSheet:
             for row in range(rows)
             for col in range(cols)
         ]
+        # frame_width = self.sheet.get_width() // 10
+        # print(frame_width)
 
         return self.images_at(rects, colorkey)
 
@@ -93,7 +95,9 @@ class SpriteSheet:
                 )
 
         grid_images = self.images_at(sprite_rects, colorkey)
-
+        print(self.sheet.get_size())
         print(f"Loaded {len(grid_images)} grid images.")
+        frame_width = self.sheet.get_width() // 10
+        print(frame_width)
 
         return grid_images
