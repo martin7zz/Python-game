@@ -2,8 +2,8 @@ import pygame
 from physicsEntity import PhysicsEntity
 
 class Player(PhysicsEntity, pygame.sprite.Sprite):
-    def __init__(self, game, local_pos, world_pos, size, is_Spawned, id):
-        super().__init__(game, 'player', world_pos, size, local_pos)
+    def __init__(self, game, pos, size, is_Spawned, id):
+        super().__init__(game, 'player', pos, size)
         pygame.sprite.Sprite.__init__(self)
         self.iid = id
         
@@ -13,9 +13,13 @@ class Player(PhysicsEntity, pygame.sprite.Sprite):
         self.jumping = False
         self.current_jumps = 0
         self.max_jumps = 3
-        self.jump_speed = 5.5
+        self.jump_speed = 7.5
         self.dashing = 0
         self.grounded_timer = 0
+        
+        self.attack_hitbox = pygame.Rect(0, 0, 70, 30)
+        self.attack_dir = 1
+        self.show_debug = True
         
         self.attack_key_held = False
         self.attacking = False
@@ -23,11 +27,9 @@ class Player(PhysicsEntity, pygame.sprite.Sprite):
         self.attack_duration = 50
         
         self.movement = [False, False]
+        self.prev_movement = [False, False]
         
         self.health = 1000
-        
-        self.x, self.y = local_pos
-        self.world_x, self.world_y = world_pos
         
         self.is_Spawned = is_Spawned
                 
@@ -40,29 +42,44 @@ class Player(PhysicsEntity, pygame.sprite.Sprite):
     
     def jump(self):
         
-        if self.grounded_timer > 3 and self.current_jumps == 0:  # Assume 3 frames of being in the air means a fall
+        if self.grounded_timer > 3 and self.current_jumps == 0:
             self.doubleJump = False
             self.current_jumps = 1
         
         if not self.doubleJump and self.current_jumps < self.max_jumps:
             self.current_jumps += 1
             self.velocity.y = -self.jump_speed
-            self.air_time = 5.5
+            self.air_time = self.jump_speed
             self.jumping = True
             # print(self.current_jumps)
-        elif self.doubleJump and self.current_jumps < self.max_jumps:  # Player is airborne
+        elif self.doubleJump and self.current_jumps < self.max_jumps:
             self.current_jumps += 1
             self.velocity.y = -self.jump_speed
-            self.air_time = 5.5
+            self.air_time = self.jump_speed
             self.jumping = True
             # print(self.current_jumps)
-            
+    
+    def update_attack_hitbox(self):
+        rect = self.rect()
+
+        offset_x = 20
+
+        center_x = rect.centerx
+
+        if self.attack_dir == -1:
+            self.attack_hitbox.x = center_x - offset_x - self.attack_hitbox.width
+        else:
+            self.attack_hitbox.x = center_x + offset_x
+
+        self.attack_hitbox.y = rect.y + 10
+       
     def attack(self):
         if not self.attacking:
             self.attacking = True
             self.attack_timer = self.attack_duration
             self.set_action('attack')
-            self.velocity.x *= 50
+            
+            self.attack_dir = -1 if self.flip else 1
             
 
             
@@ -70,21 +87,29 @@ class Player(PhysicsEntity, pygame.sprite.Sprite):
     def handle_input(self):
         keys = pygame.key.get_pressed()
         
-        if keys[pygame.K_RIGHT]:
-            if not self.movement[1]:  # Start moving right
-                self.movement[1] = True
-            self.velocity.x = self.speed_increment  # Set positive velocity for right movement
-        elif not keys[pygame.K_RIGHT] and self.movement[1]:  # Stop moving right
-            self.movement[1] = False
-            self.velocity.x = 0
-            
-        if keys[pygame.K_LEFT]:
-            if not self.movement[0]:  # Start moving left
-                self.movement[0] = True
-            self.velocity.x = -self.speed_increment  # Set negative velocity for left movement
-        elif not keys[pygame.K_LEFT] and self.movement[0]:  # Stop moving left
-            self.movement[0] = False
-            self.velocity.x = 0
+        left = keys[pygame.K_LEFT]
+        right = keys[pygame.K_RIGHT]
+        
+        self.movement[0] = left
+        self.movement[1] = right
+        
+        if left and not self.prev_movement[0]:
+            self.last_dir = -1
+        elif right and not self.prev_movement[1]:
+            self.last_dir = 1
+
+        if left and right:
+            direction = self.last_dir
+        elif left:
+            direction = -1
+        elif right:
+            direction = 1
+        else:
+            direction = 0
+
+        self.velocity.x = direction * self.speed_increment
+
+        self.prev_movement = self.movement.copy()
 
         if keys[pygame.K_SPACE] or keys[pygame.K_UP]:
             if not self.jumping:
@@ -138,7 +163,7 @@ class Player(PhysicsEntity, pygame.sprite.Sprite):
             self.doubleJump = True
         
         if self.attacking:
-            pass
+            self.update_attack_hitbox()
         elif self.movement[0] or self.movement[1]:
             self.set_action('run')
         else:
@@ -151,7 +176,22 @@ class Player(PhysicsEntity, pygame.sprite.Sprite):
                 self.attacking = False
         
     
+    def get_facing(self):
+        if self.attacking:
+            return self.attack_dir == -1
+        return self.flip
+    
     def render(self, surf, camera):
         super().render(surf, camera)
+        
+        if self.show_debug and self.attacking:
+            debug_rect = pygame.Rect(
+                self.attack_hitbox.x + camera[0],
+                self.attack_hitbox.y + camera[1],
+                self.attack_hitbox.width,
+                self.attack_hitbox.height
+            )
+
+            pygame.draw.rect(surf, (255, 0, 0), debug_rect, 2)
     
     
