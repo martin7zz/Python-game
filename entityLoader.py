@@ -44,7 +44,13 @@ class EntityLoader:
         player_width = self.player_data.get("width", 0)
         player_height = self.player_data.get("height", 0)
         player_size = (player_width, player_height)
-        player = Player(self.world.game, (player_x, player_y), (player_world_x, player_world_y), player_size, self.isSpawned, id)
+        player = Player(
+            self.world.game,
+            (player_world_x, player_world_y),
+            player_size,
+            self.isSpawned,
+            id
+        )
         
         self.world.entityManager.entities.append(player)
     
@@ -57,7 +63,12 @@ class EntityLoader:
         self.npc_height = self.npc_data.get("height", 0)
         npc_size = (self.npc_width, self.npc_height)
         
-        npc = NPC(self.world.game, (npc_x, npc_y), (npc_world_x,  npc_world_y), npc_size, id)
+        npc = NPC(
+            self.world.game,
+            (npc_world_x,  npc_world_y),
+            npc_size,
+            id
+        )
         
         self.world.entityManager.entities.append(npc)
         
@@ -72,7 +83,12 @@ class EntityLoader:
             enemy_height = enemy_instance.get("height", 0)
             enemy_size = (enemy_width, enemy_height)
             
-            enemy = Enemy(self.world.game, (enemy_x, enemy_y), (enemy_world_x, enemy_world_y), enemy_size, id)
+            enemy = Enemy(
+                self.world.game, 
+                (enemy_world_x, enemy_world_y),
+                enemy_size,
+                id
+            )
             enemies.append(enemy)
             self.world.entityManager.entities.append(enemy)
         

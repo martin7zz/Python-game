@@ -498,7 +498,7 @@
 			"exportToToc": false,
 			"allowOutOfBounds": false,
 			"doc": null,
-			"width": 21,
+			"width": 42,
 			"height": 21,
 			"resizableX": false,
 			"resizableY": false,
@@ -519,7 +519,7 @@
 			"tileRect": { "tilesetUid": 74, "x": 16, "y": 32, "w": 48, "h": 32 },
 			"uiTileRect": { "tilesetUid": 74, "x": 16, "y": 32, "w": 48, "h": 32 },
 			"nineSliceBorders": [],
-			"maxCount": 5,
+			"maxCount": 25,
 			"limitScope": "PerLevel",
 			"limitBehavior": "MoveLastOne",
 			"pivotX": 0,
@@ -575,7 +575,7 @@
 			"allowOutOfBounds": false,
 			"doc": null,
 			"width": 15,
-			"height": 31,
+			"height": 63,
 			"resizableX": false,
 			"resizableY": false,
 			"minWidth": null,
@@ -18406,7 +18406,7 @@
 							"__tile": { "tilesetUid": 74, "x": 16, "y": 32, "w": 48, "h": 32 },
 							"__smartColor": "#BE4A2F",
 							"iid": "848da1d0-48b0-11f1-97d9-6df67889cea9",
-							"width": 21,
+							"width": 42,
 							"height": 21,
 							"defUid": 13,
 							"px": [2304,512],
@@ -18422,7 +18422,7 @@
 							"__tile": { "tilesetUid": 74, "x": 16, "y": 32, "w": 48, "h": 32 },
 							"__smartColor": "#BE4A2F",
 							"iid": "85152150-48b0-11f1-97d9-fbb8ad444300",
-							"width": 21,
+							"width": 42,
 							"height": 21,
 							"defUid": 13,
 							"px": [2624,512],
@@ -18441,7 +18441,7 @@
 							"__tile": { "tilesetUid": 74, "x": 16, "y": 32, "w": 48, "h": 32 },
 							"__smartColor": "#BE4A2F",
 							"iid": "856dc8a0-48b0-11f1-97d9-c984d7032b74",
-							"width": 21,
+							"width": 42,
 							"height": 21,
 							"defUid": 13,
 							"px": [2880,512],
@@ -18460,7 +18460,7 @@
 							"__tile": { "tilesetUid": 74, "x": 16, "y": 32, "w": 48, "h": 32 },
 							"__smartColor": "#BE4A2F",
 							"iid": "87858510-48b0-11f1-97d9-49ba400069a4",
-							"width": 21,
+							"width": 42,
 							"height": 21,
 							"defUid": 13,
 							"px": [2624,960],
@@ -18472,25 +18472,6 @@
 							"__worldY": -8192
 						},
 						{
-							"__identifier": "Enemy1",
-							"__grid": [36,7],
-							"__pivot": [0,1],
-							"__tags": [],
-							"__tile": { "tilesetUid": 74, "x": 16, "y": 32, "w": 48, "h": 32 },
-							"__smartColor": "#BE4A2F",
-							"iid": "8bc6b130-48b0-11f1-97d9-d1c46b66accd",
-							"width": 21,
-							"height": 21,
-							"defUid": 13,
-							"px": [2304,512],
-							"fieldInstances": [{ "__identifier": "Is_Spawned", "__type": "Bool", "__value": false, "__tile": null, "defUid": 39, "realEditorValues": [{
-								"id": "V_Bool",
-								"params": [ false ]
-							}] }],
-							"__worldX": -52288,
-							"__worldY": -8640
-						},
-						{
 							"__identifier": "Player",
 							"__grid": [19,14],
 							"__pivot": [0,0],
@@ -18499,7 +18480,7 @@
 							"__smartColor": "#EAD4AA",
 							"iid": "a9a83a70-48b0-11f1-97d9-474605fcd6ba",
 							"width": 15,
-							"height": 31,
+							"height": 63,
 							"defUid": 40,
 							"px": [1216,896],
 							"fieldInstances": [{ "__identifier": "Is_Spawned", "__type": "Bool", "__value": false, "__tile": null, "defUid": 42, "realEditorValues": [{
@@ -18508,6 +18489,25 @@
 							}] }],
 							"__worldX": -53376,
 							"__worldY": -8256
+						},
+						{
+							"__identifier": "Enemy1",
+							"__grid": [61,17],
+							"__pivot": [0,1],
+							"__tags": [],
+							"__tile": { "tilesetUid": 74, "x": 16, "y": 32, "w": 48, "h": 32 },
+							"__smartColor": "#BE4A2F",
+							"iid": "8bc6b130-48b0-11f1-97d9-d1c46b66accd",
+							"width": 42,
+							"height": 21,
+							"defUid": 13,
+							"px": [3904,1152],
+							"fieldInstances": [{ "__identifier": "Is_Spawned", "__type": "Bool", "__value": true, "__tile": null, "defUid": 39, "realEditorValues": [{
+								"id": "V_Bool",
+								"params": [ true ]
+							}] }],
+							"__worldX": -50688,
+							"__worldY": -8000
 						}
 					]
 				},

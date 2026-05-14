@@ -4,13 +4,11 @@ import random
 from physicsEntity import PhysicsEntity
 
 class Enemy(PhysicsEntity, pygame.sprite.Sprite):
-    def __init__(self, game, local_pos, world_pos, size, id):
-        super().__init__(game, 'enemy', world_pos, size, local_pos)
+    def __init__(self, game, pos, size, id):
+        super().__init__(game, 'enemy', pos, size)
         pygame.sprite.Sprite.__init__(self)
         
         self.walking = 0
-        self.x, self.y = local_pos
-        self.world_x, self.world_y = world_pos
         self.IsDead = False
         self.id = id
     
@@ -29,8 +27,8 @@ class Enemy(PhysicsEntity, pygame.sprite.Sprite):
             self.walking = max(0, self.walking - 1)
             if not self.walking:
                 # entity attack logic
-                dis = (self.game.level.player.x - self.pos[0],
-                       self.game.level.player.y - self.pos[1]
+                dis = (self.game.level.player.pos[0] - self.pos[0],
+                       self.game.level.player.pos[1] - self.pos[1]
                 )
                 # if (abs(dis[1]) < 16):
                 #     if (self.flip and dis[0] < 0):
@@ -52,8 +50,8 @@ class Enemy(PhysicsEntity, pygame.sprite.Sprite):
             self.set_action('idle')
         
         # player dash collision with entity
-        if abs(self.game.level.player.dashing) >= 50:
-            if self.rect().colliderect(self.game.level.player.rect()):
+        if self.game.level.player.attacking:
+            if self.rect().colliderect(self.game.level.player.attack_hitbox):
                 return True
             else:
                 return self.IsDead
