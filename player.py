@@ -1,35 +1,45 @@
 import pygame
 from physicsEntity import PhysicsEntity
+from attackController import AttackController
+from playerStates import *
+
+from attacks import PLAYER_ATTACKS
 
 class Player(PhysicsEntity, pygame.sprite.Sprite):
-    def __init__(self, game, pos, size, is_Spawned, id):
+    def __init__(self, game, pos, size, is_Spawned, id, weapon):
         super().__init__(game, 'player', pos, size)
         pygame.sprite.Sprite.__init__(self)
         self.iid = id
         
-        self.speed_increment = 3.7
+        self.movement_state = MovementState.IDLE
+        self.combat_state = CombatState.NEUTRAL
+        
+        self.speed_increment = 420
         self.air_time = 0
         self.doubleJump = True
         self.jumping = False
         self.current_jumps = 0
         self.max_jumps = 3
-        self.jump_speed = 7.5
+        self.jump_speed = 550
         self.dashing = 0
         self.grounded_timer = 0
+        self.knockback_force = 300
+        self.knockback_timer = 0
+        self.damage_cooldown = 0
         
-        self.attack_hitbox = pygame.Rect(0, 0, 70, 30)
-        self.attack_dir = 1
+        self.combat = AttackController(self, PLAYER_ATTACKS)
         self.show_debug = True
         
+        self.current_weapon = weapon
         self.attack_key_held = False
-        self.attacking = False
-        self.attack_timer = 0
-        self.attack_duration = 50
+        self.weapon_level = 1
         
         self.movement = [False, False]
         self.prev_movement = [False, False]
         
-        self.health = 1000
+        self.health = 4
+        self.hit = False
+        self.IsDead = False
         
         self.is_Spawned = is_Spawned
                 
@@ -40,51 +50,99 @@ class Player(PhysicsEntity, pygame.sprite.Sprite):
             else:
                 self.dashing = 100
     
+    def update_dash(self, dt):
+        DASH_DECAY = 140
+        DASH_THRESHOLD = 50
+        FRICTION = 1400
+        DASH_SPEED = 800
+
+        # decay dash value
+        if self.dashing > 0:
+            self.dashing = max(0, self.dashing - DASH_DECAY * dt)
+        elif self.dashing < 0:
+            self.dashing = min(0, self.dashing + DASH_DECAY * dt)
+
+        # active dash
+        if abs(self.dashing) > DASH_THRESHOLD:
+            self.velocity.x = DASH_SPEED if self.dashing > 0 else -DASH_SPEED
+
+        # friction after dash
+        else:
+            if self.velocity.x > 0:
+                self.velocity.x = max(0, self.velocity.x - FRICTION * dt)
+            elif self.velocity.x < 0:
+                self.velocity.x = min(0, self.velocity.x + FRICTION * dt)
+    
     def jump(self):
         
-        if self.grounded_timer > 3 and self.current_jumps == 0:
+        if self.grounded_timer > 0.04 and self.current_jumps == 0:
             self.doubleJump = False
             self.current_jumps = 1
         
-        if not self.doubleJump and self.current_jumps < self.max_jumps:
+        if self.current_jumps < self.max_jumps:
             self.current_jumps += 1
             self.velocity.y = -self.jump_speed
-            self.air_time = self.jump_speed
+            self.air_time = 0
             self.jumping = True
-            # print(self.current_jumps)
-        elif self.doubleJump and self.current_jumps < self.max_jumps:
-            self.current_jumps += 1
-            self.velocity.y = -self.jump_speed
-            self.air_time = self.jump_speed
-            self.jumping = True
-            # print(self.current_jumps)
     
-    def update_attack_hitbox(self):
-        rect = self.rect()
-
-        offset_x = 20
-
-        center_x = rect.centerx
-
-        if self.attack_dir == -1:
-            self.attack_hitbox.x = center_x - offset_x - self.attack_hitbox.width
+    def update_air_state(self, dt):
+        self.air_time += dt
+        
+        if self.collisions['down']:
+            self.grounded_timer = 0
+            self.air_time = 0
+            self.current_jumps = 0
+            self.doubleJump = True
         else:
-            self.attack_hitbox.x = center_x + offset_x
-
-        self.attack_hitbox.y = rect.y + 10
-       
-    def attack(self):
-        if not self.attacking:
-            self.attacking = True
-            self.attack_timer = self.attack_duration
-            self.set_action('attack')
+            self.grounded_timer += dt
+    
+    def damage_cooldown_update(self, dt):
+        self.damage_cooldown = max(0, self.damage_cooldown - dt)
             
-            self.attack_dir = -1 if self.flip else 1
-            
+    def update_knockback(self, dt):
+        self.knockback_timer = max(0, self.knockback_timer - dt)
+    
+    def start_knockback(self, source):
+        direction = 1 if self.rect().centerx >= source.rect().centerx else -1
+        self.velocity.x = direction * self.knockback_force
+        if self.is_airborne():
+            self.velocity.y = direction + self.knockback_force - 600
+        self.knockback_timer = 0.15
+    
+    def take_damage(self, amount, source=None):
+        if self.IsDead:
+            return
+        if self.damage_cooldown > 0:
+            return
+        
+        self.health -= amount
+        self.hit = True
+        
+        self.damage_cooldown = 0.5
+        
+        if source is not None:
+            self.start_knockback(source)
+        
+        if self.health <= 0:
+            self.IsDead = True
 
+    def check_enemy_hit(self, enemies):
+        for enemy in enemies:
+            if enemy.combat.hitbox_active:
+                if not self.hit and self.rect().colliderect(enemy.combat.hitbox_rect):
+                    self.take_damage(enemy.combat.get_damage(), enemy)
+                    return
+            elif self.rect().colliderect(enemy.rect()):
+                self.take_damage(enemy.body_damage, enemy)
+                return
+            else:
+                self.hit = False
             
     
     def handle_input(self):
+        if self.knockback_timer > 0:
+            return
+        
         keys = pygame.key.get_pressed()
         
         left = keys[pygame.K_LEFT]
@@ -122,76 +180,84 @@ class Player(PhysicsEntity, pygame.sprite.Sprite):
         
         if keys[pygame.K_z]:
             if not self.attack_key_held:
-                self.attack()
+                self.combat.attack_start(self.current_weapon, "light")
             self.attack_key_held = True
         else:
             self.attack_key_held = False
     
-    def update(self, tilemap, movement=(0, 0)):
-        self.handle_input()
+    def is_grounded(self):
+        return self.collisions['down']
+    
+    def is_airborne(self):
+        return self.grounded_timer > 0.04
+    
+    # def is_airborne(self):
+    #     return not self.collisions['down']
+    
+    def update_states(self):
+        # Comabt State
+        if self.combat.active_attack:
+            self.combat_state = CombatState.ATTACK
+        elif self.knockback_timer > 0:
+            self.combat_state = CombatState.KNOCKBACK
+        else:
+            self.combat_state = CombatState.NEUTRAL
         
-        if self.dashing > 0:
-            self.dashing = max(0, self.dashing - 1)
-        if self.dashing < 0:
-            self.dashing = min(0, self.dashing + 1)
+        # Movement State
         if abs(self.dashing) > 50:
-            self.velocity.x = abs(self.dashing) / self.dashing * 8
-            if abs(self.dashing) == 51:
-                self.velocity.x *= 0.1
-                
-        if abs(self.dashing) <= 50:
-            if self.velocity.x > 0:
-                self.velocity.x = max(self.velocity.x - 0.1, 0)
-            else:
-                self.velocity.x = min(self.velocity.x + 0.1, 0)
+            self.movement_state = MovementState.DASH
         
-        # print(self.velocity.x)
-            
-        super().update(tilemap, movement=movement)
+        # elif self.is_airborne():
+        #     if self.velocity.y < 0:
+        #         self.movement_state = MovementState.JUMP
+        #     else:
+        #         self.movement_state = MovementState.FALL
         
-        self.air_time += 1
-        
-        if not self.collisions['down']:
-            self.grounded_timer += 1
+        elif abs(self.velocity.x) > 0.1:
+            self.movement_state = MovementState.RUN
         else:
-            self.grounded_timer = 0  # Reset timer if grounded
-        
-        
-        if self.collisions['down']:
-            self.air_time = 0
-            self.current_jumps = 0
-            self.doubleJump = True
-        
-        if self.attacking:
-            self.update_attack_hitbox()
-        elif self.movement[0] or self.movement[1]:
-            self.set_action('run')
-        else:
-            self.set_action('idle')
-        
-        if self.attacking:
-            self.attack_timer -= 1
-
-            if self.attack_timer <= 0:
-                self.attacking = False
-        
+            self.movement_state = MovementState.IDLE
     
-    def get_facing(self):
-        if self.attacking:
-            return self.attack_dir == -1
-        return self.flip
+    def update_animation(self):
+        if self.combat_state == CombatState.ATTACK:
+            if self.action != "attack":
+                self.set_action("attack")
+            return
+        
+        if self.movement_state == MovementState.IDLE:
+            self.set_action("idle")
+        elif self.movement_state == MovementState.RUN:
+            self.set_action("run")
+        # elif self.movement_state == MovementState.JUMP:
+        #     self.set_action("jump")
+        elif self.movement_state == MovementState.FALL:
+            self.set_action("run")
+        # elif self.movement_state == MovementState.DASH:
+        #     self.set_action("dash")
     
+    def update(self, tilemap, dt, movement=(0, 0)):
+        eneimes = self.game.level.enemies
+        
+        self.update_knockback(dt)
+        self.damage_cooldown_update(dt)
+        self.update_states()
+        
+        self.handle_input()
+        self.update_facing()
+        self.update_dash(dt)
+        
+        super().update(tilemap, dt, movement=movement)
+        
+        self.combat.update(dt)
+        self.check_enemy_hit(eneimes)
+        
+        self.update_air_state(dt)
+        
+        self.update_animation()
+        
     def render(self, surf, camera):
         super().render(surf, camera)
-        
-        if self.show_debug and self.attacking:
-            debug_rect = pygame.Rect(
-                self.attack_hitbox.x + camera[0],
-                self.attack_hitbox.y + camera[1],
-                self.attack_hitbox.width,
-                self.attack_hitbox.height
-            )
-
-            pygame.draw.rect(surf, (255, 0, 0), debug_rect, 2)
+        # FOR DEBUGGING
+        self.combat.render(surf, camera)
     
     
