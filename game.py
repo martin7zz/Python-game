@@ -52,6 +52,7 @@ class Game():
             
     def run(self):
         while True:
+            dt = min(self.fpsClock.tick(self.FPS) / 1000, 1/30)
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     self.menu.menu_state = "main"
@@ -69,14 +70,11 @@ class Game():
                     sys.exit()
                 
             if self.menu.game_paused:
-                self.menu.run(self.screen)
+                self.menu.run(self.screen, dt)
             else:
-                self.level.run()
+                self.level.run(dt)
             
             pygame.display.update()
-                
-            # fps control
-            self.fpsClock.tick(self.FPS)
 
 
 Game().run()
