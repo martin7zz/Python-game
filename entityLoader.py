@@ -1,7 +1,7 @@
 import pygame
 from player import Player
 from npc import NPC
-from enemy import Enemy
+from mushroomEnemy import MushroomEnemy
 
 class EntityLoader:
     def __init__(self, world):
@@ -44,12 +44,14 @@ class EntityLoader:
         player_width = self.player_data.get("width", 0)
         player_height = self.player_data.get("height", 0)
         player_size = (player_width, player_height)
+        player_weapon = "sword"
         player = Player(
             self.world.game,
             (player_world_x, player_world_y),
             player_size,
             self.isSpawned,
-            id
+            id,
+            player_weapon
         )
         
         self.world.entityManager.entities.append(player)
@@ -83,7 +85,7 @@ class EntityLoader:
             enemy_height = enemy_instance.get("height", 0)
             enemy_size = (enemy_width, enemy_height)
             
-            enemy = Enemy(
+            enemy = MushroomEnemy(
                 self.world.game, 
                 (enemy_world_x, enemy_world_y),
                 enemy_size,
