@@ -15,19 +15,19 @@ class Animation:
         self.time_acc = 0
         self.done = False
 
-        self.frame_time = 120 / fps
+        self.frame_duration = 1.0 / fps
 
     def copy(self):
         return Animation(self.frames, self.fps, self.loop)
 
-    def update(self):
+    def update(self, dt):
         if self.done:
             return
 
-        self.time_acc += 1
+        self.time_acc += dt
 
-        if self.time_acc >= self.frame_time:
-            self.time_acc = 0
+        if self.time_acc >= self.frame_duration:
+            self.time_acc -= self.frame_duration
             self.frame_index += 1
 
             if self.frame_index >= len(self.frames):
