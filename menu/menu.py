@@ -95,7 +95,7 @@ class Menu():
             }
         }
     
-    def run(self, screen):
+    def run(self, screen, dt):
         if self.game_paused:
             screen.fill((0, 0, 0))
 
