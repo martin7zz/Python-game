@@ -12,6 +12,7 @@ class PhysicsEntity():
         self.action = ''
         self.anim_offset = (-3, -3)
         self.flip = False
+        self.force_flip = False
         
         self.animation = None
         self.set_action('idle')
@@ -27,10 +28,22 @@ class PhysicsEntity():
             key = self.type + '/' + self.action
             self.animation = self.game.assets.get(key).copy()
     
-    def update(self, tilemap, movement=(0, 0)):
+    # maybe remove combat locking later        
+    def update_facing(self):
+        if self.combat.active_attack:
+            return
+        if self.velocity.x > 0:
+            self.flip = False
+        elif self.velocity.x < 0:
+            self.flip = True
+    
+    def update(self, tilemap, dt, movement=(0, 0)):
         self.collisions = {'up': False, 'down': False, 'right': False, 'left': False}
         
-        frame_movement = (movement[0] + self.velocity.x, movement[1] + self.velocity.y)
+        frame_movement = (
+            (self.velocity.x) * dt,
+            (self.velocity.y) * dt
+        )
         
         self.pos[0] += frame_movement[0]
         entity_rect = self.rect()
@@ -39,9 +52,11 @@ class PhysicsEntity():
                 if frame_movement[0] > 0:
                     entity_rect.right = rect.left
                     self.collisions['right'] = True
+                    # self.velocity.x = 0 
                 if frame_movement[0] < 0:
                     entity_rect.left = rect.right
                     self.collisions['left'] = True
+                    # self.velocity.x = 0 
                 self.pos[0] = entity_rect.x
         
         self.pos[1] += frame_movement[1]
@@ -58,26 +73,31 @@ class PhysicsEntity():
                     # print(f"collision up: {self.collisions['up']}")
                 self.pos[1] = entity_rect.y
         
-        if self.velocity.x > 0:
-            self.flip = False
-        elif self.velocity.x < 0:
-            self.flip = True
-        
         self.last_movement = movement
         
-        # gravity
-        if not self.collisions['down']:
-            self.velocity.y = min(5, self.velocity.y + 0.18)
+        GRAVITY = 1200
+        MAX_FALL_SPEED = 800
         
+        # gravity
         if self.collisions['down'] or self.collisions['up']:
             self.velocity.y = 0
-        
+        else:
+            self.velocity.y = min(MAX_FALL_SPEED, self.velocity.y + GRAVITY * dt)
+                
         # temporary
         if isinstance(self.animation, Animation):
-            self.animation.update()
+            self.animation.update(dt)
     
+    # TO BE FIXED
     def get_facing(self):
-        return self.flip
+        facing = self.flip
+
+        if getattr(self, "flip_x_override", False):
+            facing = not facing
+
+        return facing
+        
+        #return self.flip
     
     def render(self, surf, camera):
         frame = self.animation.img()
