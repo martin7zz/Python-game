@@ -57,11 +57,15 @@ class AssetManager:
     def load_enemy_assets(self):
         self.assets['enemy/idle'] = Animation(
             SpriteSheet(BASE_IMG_PATH + 'Enemies/Mushroom/Mushroom without VFX/Mushroom-Idle.png').slice(1, 7),
-            fps=7, loop=True
+            fps=15, loop=True
         )
         self.assets['enemy/run'] = Animation(
             SpriteSheet(BASE_IMG_PATH + 'Enemies/Mushroom/Mushroom without VFX/Mushroom-Run.png').slice(1, 8),
-            fps=8, loop=True
+            fps=15, loop=True
+        )
+        self.assets['enemy/attack'] = Animation(
+            SpriteSheet(BASE_IMG_PATH + 'Enemies/Mushroom/Mushroom without VFX/Mushroom-Attack.png').slice(1, 10),
+            fps=20, loop=False
         )
 
     def get(self, key):
