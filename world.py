@@ -13,6 +13,9 @@ class World:
         self.level_data = level_data
         self.levels = self.level_data['levels']
         
+        self.display = display
+        self.screen = screen
+        
         self.entityManager = EntityManager()
         self.entityLoader = EntityLoader(self)
         
@@ -20,10 +23,12 @@ class World:
         self.current_level = None
         self.level = None
         
+        self.camera_x = 0
+        self.camera_y = 0
+        self.camera_smoothness = 8
+        
         self.get_initial_level()
         
-        self.display = display
-        self.screen = screen
         
         self.SKYCOLOR = (135, 206, 235)
         
@@ -35,18 +40,14 @@ class World:
         
         self.scroll = [0, 0]
         
-    
-    def run(self):
+        
+    def run(self, dt):
         self.display.fill(self.SKYCOLOR)
         
-        map_left, map_right, map_top, map_bottom = self.calculate_map_boundaries()
         
-        camera = self.update_camera(map_left, map_right, map_top, map_bottom, self.player)
+        camera = self.update_camera(self.player, dt)
         
-        self.player.update(self.tilemap, (self.player.movement[1] - self.player.movement[0], 0))
-        
-        
-        
+        self.player.update(self.tilemap, dt, (self.player.movement[1] - self.player.movement[0], 0))
         
         self.load_nearby_levels(self.player)
         
@@ -59,20 +60,34 @@ class World:
             npc.render(self.display, camera)
         
         for enemy in self.enemies.copy():
-            IsDead = enemy.update(self.tilemap, (0, 0))
+            IsDead = enemy.update(self.tilemap, dt, (0, 0))
             enemy.render(self.display, camera)
             # print(f'Enemy position: {enemy.pos}')
             if IsDead:
                 self.enemies.remove(enemy)
                 self.entityManager.entities.remove(enemy)
         
+        if self.player.IsDead:
+            self.entityManager.entities.remove(self.player)
+        
         self.player.render(self.display, camera)
         
         # self.entities.render(self.display, camera)
         
         self.draw(self.screen)
+    
+    # FOR LOCAL LEVEL MAP BOUNDARIES
+    def level_boundaries(self):
+        lvl_left   = self.current_level['worldX']
+        lvl_top    = self.current_level['worldY']
+        lvl_right  = lvl_left + self.current_level['pxWid']
+        lvl_bottom = lvl_top  + self.current_level['pxHei']
         
-    def calculate_map_boundaries(self):
+        return (lvl_left, lvl_top, lvl_right, lvl_bottom)
+        
+            
+    # FOR WORLD MAP BOUNDARIES
+    def map_boundaries(self):
         map_left = float('inf')
         map_right = float('-inf')
         map_top = float('inf')
@@ -86,27 +101,50 @@ class World:
             map_top = min(map_top, level_y)
             map_right = max(map_right, level_x + level_width)
             map_bottom = max(map_bottom, level_y + level_height)
-            
-        return map_left, map_right, map_top, map_bottom
-    
-    def update_camera(self, map_left, map_right, map_top, map_bottom, player):
         
+        return (map_left, map_top, map_right, map_bottom)
+    
+    def snap_camera_to_player(self):
+        width = self.display.get_width()
+        height = self.display.get_height()
+
+        target_x = -(self.player.pos[0] + self.player.size[0] / 2) + width / 2
+        target_y = -(self.player.pos[1] + self.player.size[1] / 2) + height / 2
+
+        self.camera_x = target_x
+        self.camera_y = target_y
+    
+    def calculate_scroll(self, boundaries, player):
         target_scroll_x = -(player.pos[0] + player.size[0] / 2) + self.display.get_width() / 2
         target_scroll_y = -(player.pos[1] + player.size[1] / 2) + self.display.get_height() / 2
         
-        if player.rect().centerx < map_left + self.display.get_width() / 2:
-            target_scroll_x = -map_left
-        elif player.rect().centerx > map_right - self.display.get_width() / 2:
-            target_scroll_x = -(map_right - self.display.get_width())
+        if player.rect().centerx < boundaries[0] + self.display.get_width() / 2:
+            target_scroll_x = -boundaries[0]
+        elif player.rect().centerx > boundaries[2] - self.display.get_width() / 2:
+            target_scroll_x = -(boundaries[2] - self.display.get_width())
 
-        if player.rect().centery < map_top + self.display.get_height() / 2:
-            target_scroll_y = -map_top
-        elif player.rect().centery > map_bottom - self.display.get_height() / 2:
-            target_scroll_y = -(map_bottom - self.display.get_height())
+        if player.rect().centery < boundaries[1] + self.display.get_height() / 2:
+            target_scroll_y = -boundaries[1]
+        elif player.rect().centery > boundaries[3] - self.display.get_height() / 2:
+            target_scroll_y = -(boundaries[3] - self.display.get_height())
         
-        render_scroll = (round(target_scroll_x), round(target_scroll_y))
+        return (target_scroll_x, target_scroll_y)
+    
+    def update_camera(self, player, dt):
         
-        return (render_scroll)
+        boundries = self.world_boundaries
+        
+        if self.current_level:
+            boundries = self.current_level_boundaries
+        
+        target_scroll = self.calculate_scroll(boundries, player)
+        
+        smooth = self.camera_smoothness
+
+        self.camera_x += (target_scroll[0] - self.camera_x) * smooth * dt
+        self.camera_y += (target_scroll[1] - self.camera_y) * smooth * dt
+        
+        return (round(self.camera_x), round(self.camera_y))
     
     # NEEDS TO BE FIXED
     def load_nearby_levels(self, player, range_x = 10000, range_y = 10000):
@@ -132,10 +170,11 @@ class World:
                     current_level_id = self.current_level['identifier']
                     # print(current_level_id)
                     # print(self.current_level['identifier'])
-                    self.enemies = self.entityManager.enemies_by_level.get(current_level_id)
+                    self.enemies = self.entityManager.enemies_by_level.get(current_level_id, [])
                     
                     # could be and error together with the other tilemap loader
                     self.tilemap.load_tilemap(current_level_id)
+                    self.current_level_boundaries = self.level_boundaries()
                 
         # Now, unload levels that are no longer within range
         for level_id, level_tiles in list(self.tilemap.render_tiles_by_level.items()):
@@ -175,6 +214,8 @@ class World:
         self.tilemap = Tilemap(self.game)
         
         self.load_level(self.current_level)
+        
+        self.snap_camera_to_player()
     
     def load_level(self, level):
         # for now
@@ -188,6 +229,9 @@ class World:
         if level not in self.loaded_levels:
             self.setup_level()
             self.loaded_levels.append(level)
+        
+        self.world_boundaries = self.map_boundaries()
+        self.current_level_boundaries = self.level_boundaries()
         
         # for level in self.loaded_levels:
             # print(level['identifier'])    
@@ -210,8 +254,6 @@ class World:
         self.entityLoader.enemy_spawn(level_id)
         
         # self.entityLoader.npc_spawn()
-        
-        
         
         self.enemies = self.entityManager.enemies_by_level.get(self.current_level['identifier'], [])
         self.npc = self.entityManager.get_entities_by_type(NPC)
